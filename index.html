@@ -4,6 +4,19 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>IST → World Time Converter</title>
+<script>
+  // Apply saved theme before paint to avoid a flash. Light is the default.
+  try {
+    document.documentElement.setAttribute(
+      "data-theme", localStorage.getItem("ist-theme") || "light"
+    );
+  } catch (e) {
+    document.documentElement.setAttribute("data-theme", "light");
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
   :root {
     --bg: #0d1117;
@@ -13,23 +26,57 @@
     --text: #e6edf3;
     --muted: #8b949e;
     --faint: #6e7681;
-    --accent: #58a6ff;
+    --accent: #4cc38a;
     --green: #3fb950;
     --green-bg: rgba(63, 185, 80, 0.12);
     --red: #f85149;
     --red-bg: rgba(248, 81, 73, 0.12);
     --shadow: 0 1px 0 rgba(255,255,255,0.02), 0 8px 24px rgba(0,0,0,0.35);
+    --page-bg: radial-gradient(1200px 600px at 50% -200px, #14241c 0%, #0d1117 55%);
+    --btn-hover-bg: #222b39;
+    --card-hover-border: #3a4452;
+    --chip-bg: rgba(255,255,255,0.05);
+    --input-focus: rgba(76,195,138,0.22);
+    --accent-soft: rgba(76,195,138,0.10);
+    --accent-border: rgba(76,195,138,0.35);
+  }
+
+  :root[data-theme="light"] {
+    --bg: #f4f5f7;
+    --panel: #ffffff;
+    --panel-2: #f7f8fa;
+    --border: #ecedf0;
+    --text: #1b1d22;
+    --muted: #6b7280;
+    --faint: #9aa0aa;
+    --accent: #2f7d4f;
+    --green: #1f8a4c;
+    --green-bg: rgba(31, 138, 76, 0.12);
+    --red: #d64545;
+    --red-bg: rgba(214, 69, 69, 0.10);
+    --shadow: 0 1px 2px rgba(16,24,40,0.04), 0 6px 20px rgba(16,24,40,0.06);
+    --page-bg: radial-gradient(1200px 600px at 50% -240px, #eef0f3 0%, #f4f5f7 60%);
+    --btn-hover-bg: #f0f1f4;
+    --card-hover-border: #dcdee3;
+    --chip-bg: rgba(16,24,40,0.04);
+    --input-focus: rgba(47,125,79,0.16);
+    --accent-soft: rgba(47,125,79,0.07);
+    --accent-border: rgba(47,125,79,0.28);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  input, select, button, textarea { font-family: inherit; }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: radial-gradient(1200px 600px at 50% -200px, #11202e 0%, var(--bg) 55%);
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--page-bg);
     color: var(--text);
     min-height: 100vh;
     padding: 32px 20px 64px;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.01em;
+    transition: background .25s ease, color .25s ease;
   }
 
   .container { max-width: 1080px; margin: 0 auto; }
@@ -69,7 +116,7 @@
     border-radius: 999px;
     font-size: 13px;
     color: var(--text);
-    background: rgba(255,255,255,0.03);
+    background: var(--chip-bg);
     font-variant-numeric: tabular-nums;
   }
 
@@ -108,7 +155,7 @@
   .control input[type="date"]:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(88,166,255,0.2);
+    box-shadow: 0 0 0 3px var(--input-focus);
   }
   .control select {
     background: var(--bg);
@@ -124,7 +171,7 @@
   .control select:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(88,166,255,0.2);
+    box-shadow: 0 0 0 3px var(--input-focus);
   }
   .control button {
     background: var(--panel-2);
@@ -137,7 +184,7 @@
     cursor: pointer;
     transition: border-color .15s, background .15s;
   }
-  .control button:hover { border-color: var(--accent); background: #222b39; }
+  .control button:hover { border-color: var(--accent); background: var(--btn-hover-bg); }
 
   /* ---------- IST result panel ---------- */
   .ist-result {
@@ -146,8 +193,8 @@
     align-items: center;
     gap: 16px;
     flex-wrap: wrap;
-    background: linear-gradient(180deg, rgba(88,166,255,0.10), rgba(88,166,255,0.04));
-    border: 1px solid rgba(88,166,255,0.35);
+    background: linear-gradient(180deg, var(--accent-soft), var(--panel));
+    border: 1px solid var(--accent-border);
     border-radius: 16px;
     padding: 18px 24px;
     margin-bottom: 32px;
@@ -202,10 +249,10 @@
     box-shadow: var(--shadow);
     transition: border-color .15s, transform .15s;
   }
-  .card:hover { border-color: #3a4452; transform: translateY(-2px); }
+  .card:hover { border-color: var(--card-hover-border); transform: translateY(-2px); }
   .card.is-source {
-    border-color: rgba(88,166,255,0.55);
-    background: linear-gradient(180deg, rgba(88,166,255,0.08), var(--panel));
+    border-color: var(--accent);
+    background: linear-gradient(180deg, var(--accent-soft), var(--panel));
   }
   .source-tag {
     font-size: 10.5px;
@@ -237,7 +284,7 @@
   }
   .badge.ahead { color: var(--green); background: var(--green-bg); }
   .badge.behind { color: var(--red); background: var(--red-bg); }
-  .badge.same { color: var(--muted); background: rgba(255,255,255,0.05); }
+  .badge.same { color: var(--muted); background: var(--chip-bg); }
 
   .card-time {
     font-size: 34px;
@@ -265,11 +312,41 @@
     padding: 2px 7px;
   }
 
+  /* ---------- Theme toggle ---------- */
+  .topbar { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+  .theme-toggle {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 8px 15px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    box-shadow: var(--shadow);
+    transition: border-color .15s, background .15s, transform .15s;
+  }
+  .theme-toggle:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .theme-toggle .ico { font-size: 15px; line-height: 1; }
+
+  header, .control, .ist-result, .card {
+    transition: background .25s ease, border-color .25s ease, color .25s ease, transform .15s ease;
+  }
+
   footer { text-align: center; color: var(--faint); font-size: 12px; margin-top: 12px; }
 </style>
 </head>
 <body>
 <div class="container">
+  <div class="topbar">
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle color theme">
+      <span class="ico" id="themeIcon">🌙</span><span id="themeLabel">Dark</span>
+    </button>
+  </div>
+
   <header>
     <div class="header-label">Current Time · India Standard Time</div>
     <div class="live-clock" id="liveClock">--:--:--</div>
@@ -639,6 +716,34 @@
   istInput.addEventListener("input", render);
   srcDate.addEventListener("input", render);
   srcZone.addEventListener("change", render);
+
+  // --- Theme toggle --------------------------------------------------------
+
+  const themeToggle = document.getElementById("themeToggle");
+  const themeIcon = document.getElementById("themeIcon");
+  const themeLabel = document.getElementById("themeLabel");
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    // Button advertises the theme you'll switch TO.
+    if (theme === "dark") {
+      themeIcon.textContent = "☀️";
+      themeLabel.textContent = "Light";
+    } else {
+      themeIcon.textContent = "🌙";
+      themeLabel.textContent = "Dark";
+    }
+    try { localStorage.setItem("ist-theme", theme); } catch (e) {}
+  }
+
+  let savedTheme = "light";
+  try { savedTheme = localStorage.getItem("ist-theme") || "light"; } catch (e) {}
+  applyTheme(savedTheme);
+
+  themeToggle.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    applyTheme(current === "dark" ? "light" : "dark");
+  });
 
   setInputToNowInSource();
   render();
