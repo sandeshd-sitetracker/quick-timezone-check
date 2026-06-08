@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IST → World Time Converter</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-2: #1c2330;
+    --border: #2a323d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --faint: #6e7681;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --green-bg: rgba(63, 185, 80, 0.12);
+    --red: #f85149;
+    --red-bg: rgba(248, 81, 73, 0.12);
+    --shadow: 0 1px 0 rgba(255,255,255,0.02), 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 50% -200px, #11202e 0%, var(--bg) 55%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 20px 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { max-width: 1080px; margin: 0 auto; }
+
+  /* ---------- Live IST header ---------- */
+  header {
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px 32px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    margin-bottom: 28px;
+  }
+  .header-label {
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-bottom: 10px;
+  }
+  .live-clock {
+    font-size: clamp(44px, 9vw, 76px);
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .live-clock .secs { color: var(--accent); }
+  .live-clock .ampm { font-size: 0.4em; color: var(--muted); font-weight: 600; vertical-align: 0.35em; margin-left: 8px; }
+  .header-date { margin-top: 12px; font-size: 17px; color: var(--muted); }
+  .header-offset {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 5px 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--text);
+    background: rgba(255,255,255,0.03);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Control ---------- */
+  .control {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 24px;
+    margin-bottom: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    box-shadow: var(--shadow);
+  }
+  .control label {
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .control input[type="time"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 22px;
+    font-weight: 600;
+    padding: 10px 14px;
+    font-variant-numeric: tabular-nums;
+    color-scheme: dark;
+  }
+  .control input[type="time"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(88,166,255,0.2);
+  }
+  .control select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+    padding: 11px 14px;
+    cursor: pointer;
+    color-scheme: dark;
+  }
+  .control select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(88,166,255,0.2);
+  }
+  .control button {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 11px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .control button:hover { border-color: var(--accent); background: #222b39; }
+
+  /* ---------- IST result panel ---------- */
+  .ist-result {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: linear-gradient(180deg, rgba(88,166,255,0.10), rgba(88,166,255,0.04));
+    border: 1px solid rgba(88,166,255,0.35);
+    border-radius: 16px;
+    padding: 18px 24px;
+    margin-bottom: 32px;
+    box-shadow: var(--shadow);
+  }
+  .ist-result-left { display: flex; align-items: center; gap: 14px; }
+  .ist-result-flag { font-size: 30px; line-height: 1; }
+  .ist-result-name { font-size: 15px; font-weight: 600; }
+  .ist-result-context { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .ist-result-right { text-align: right; }
+  .ist-result-time {
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .ist-result-time .ampm { font-size: 0.45em; color: var(--muted); font-weight: 600; margin-left: 6px; }
+  .ist-result-date { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .ist-result-date .daydiff { color: var(--accent); font-weight: 600; }
+  @media (max-width: 560px) {
+    .ist-result-right { text-align: left; }
+  }
+
+  /* ---------- Groups & cards ---------- */
+  .group { margin-bottom: 32px; }
+  .group-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 860px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+    transition: border-color .15s, transform .15s;
+  }
+  .card:hover { border-color: #3a4452; transform: translateY(-2px); }
+  .card.is-source {
+    border-color: rgba(88,166,255,0.55);
+    background: linear-gradient(180deg, rgba(88,166,255,0.08), var(--panel));
+  }
+  .source-tag {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-top: 4px;
+  }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .card-city { display: flex; align-items: center; gap: 9px; }
+  .card-flag { font-size: 22px; line-height: 1; }
+  .card-name { font-size: 15px; font-weight: 600; }
+  .card-sub { font-size: 12px; color: var(--faint); margin-top: 2px; }
+
+  .badge {
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 4px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .badge.ahead { color: var(--green); background: var(--green-bg); }
+  .badge.behind { color: var(--red); background: var(--red-bg); }
+  .badge.same { color: var(--muted); background: rgba(255,255,255,0.05); }
+
+  .card-time {
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .card-time .ampm { font-size: 0.45em; color: var(--muted); font-weight: 600; margin-left: 6px; }
+  .card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 12px;
+    gap: 8px;
+  }
+  .card-date { font-size: 13px; color: var(--muted); }
+  .card-date .daydiff { color: var(--accent); font-weight: 600; }
+  .card-offset {
+    font-size: 12px;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 7px;
+  }
+
+  footer { text-align: center; color: var(--faint); font-size: 12px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="header-label">Current Time · India Standard Time</div>
+    <div class="live-clock" id="liveClock">--:--:--</div>
+    <div class="header-date" id="liveDate">—</div>
+    <div class="header-offset" id="liveOffset">UTC +5:30</div>
+  </header>
+
+  <div class="control">
+    <label for="srcZone">When it's</label>
+    <input type="time" id="istInput" step="60" />
+    <label for="srcZone">in</label>
+    <select id="srcZone"></select>
+    <button id="nowBtn" type="button">Now</button>
+  </div>
+
+  <div class="ist-result" id="istResult">
+    <div class="ist-result-left">
+      <span class="ist-result-flag">🇮🇳</span>
+      <div>
+        <div class="ist-result-name">India Standard Time</div>
+        <div class="ist-result-context" id="istResultContext"></div>
+      </div>
+    </div>
+    <div class="ist-result-right">
+      <div class="ist-result-time" id="istResultTime"></div>
+      <div class="ist-result-date" id="istResultDate"></div>
+    </div>
+  </div>
+
+  <div id="groups"></div>
+
+  <footer>
+    Conversions computed live with <code>Intl.DateTimeFormat</code> + IANA zones — DST handled automatically.
+  </footer>
+</div>
+
+<script>
+  const IST = "Asia/Kolkata";
+
+  const GROUPS = [
+    {
+      heading: "United States",
+      flag: "🇺🇸",
+      zones: [
+        { name: "Eastern",  sub: "New York",          tz: "America/New_York",    flag: "🇺🇸" },
+        { name: "Central",  sub: "Chicago",           tz: "America/Chicago",     flag: "🇺🇸" },
+        { name: "Mountain", sub: "Denver",            tz: "America/Denver",      flag: "🇺🇸" },
+        { name: "Arizona",  sub: "Phoenix · no DST",  tz: "America/Phoenix",     flag: "🇺🇸" },
+        { name: "Pacific",  sub: "Los Angeles",       tz: "America/Los_Angeles", flag: "🇺🇸" },
+        { name: "Alaska",   sub: "Anchorage",         tz: "America/Anchorage",   flag: "🇺🇸" },
+        { name: "Hawaii",   sub: "Honolulu · no DST", tz: "Pacific/Honolulu",    flag: "🌺" },
+      ],
+    },
+    {
+      heading: "Europe",
+      flag: "🇪🇺",
+      zones: [
+        { name: "London",         sub: "United Kingdom",        tz: "Europe/London", flag: "🇬🇧" },
+        { name: "Central Europe", sub: "Paris · Berlin · Madrid", tz: "Europe/Berlin", flag: "🇪🇺" },
+      ],
+    },
+    {
+      heading: "Australia",
+      flag: "🇦🇺",
+      zones: [
+        { name: "Sydney",  sub: "Melbourne · Sydney", tz: "Australia/Sydney", flag: "🇦🇺" },
+        { name: "Perth",   sub: "Western Australia",  tz: "Australia/Perth",  flag: "🇦🇺" },
+      ],
+    },
+  ];
+
+  // --- Helpers -------------------------------------------------------------
+
+  // Get the "wall clock" parts of a Date in a given IANA time zone.
+  function partsInZone(date, tz) {
+    const fmt = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false,
+    });
+    const p = {};
+    for (const { type, value } of fmt.formatToParts(date)) p[type] = value;
+    // "24" hour edge → normalize to 0
+    if (p.hour === "24") p.hour = "00";
+    return {
+      year: +p.year, month: +p.month, day: +p.day,
+      hour: +p.hour, minute: +p.minute, second: +p.second,
+    };
+  }
+
+  // The UTC offset (in minutes) of a zone at a given instant.
+  function offsetMinutes(date, tz) {
+    const p = partsInZone(date, tz);
+    const asUTC = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+    return Math.round((asUTC - Math.floor(date.getTime() / 1000) * 1000) / 60000);
+  }
+
+  // Given a wall-clock (a date + chosen H:M) in some zone, produce the
+  // absolute instant (a real Date) that those wall-clock numbers represent.
+  function wallClockToInstant(parts, tz) {
+    // Build a guess in UTC, then correct using the zone's actual offset.
+    const guess = Date.UTC(
+      parts.year, parts.month - 1, parts.day,
+      parts.hour, parts.minute, 0
+    );
+    const off = offsetMinutes(new Date(guess), tz); // minutes east of UTC
+    // Wall clock = UTC + offset  ⇒  UTC instant = wall - offset
+    return new Date(guess - off * 60000);
+  }
+
+  function ordinalDateLabel(parts) {
+    // parts from partsInZone — build a readable date using a UTC reference.
+    const d = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+    return d.toLocaleDateString("en-US", {
+      weekday: "short", month: "short", day: "numeric", timeZone: "UTC",
+    });
+  }
+
+  function formatTime12(parts) {
+    let h = parts.hour % 12;
+    if (h === 0) h = 12;
+    const m = String(parts.minute).padStart(2, "0");
+    const ampm = parts.hour < 12 ? "AM" : "PM";
+    return { main: h + ":" + m, ampm };
+  }
+
+  function zoneAbbrev(date, tz) {
+    // Try short name (e.g. EDT, GMT, AEST); fall back to UTC±H:MM.
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz, timeZoneName: "short", hour: "2-digit",
+      }).formatToParts(date);
+      const tzn = parts.find((p) => p.type === "timeZoneName");
+      if (tzn && tzn.value && !/^GMT[+-]?$/.test(tzn.value)) return tzn.value;
+    } catch (e) {}
+    return offsetLabel(offsetMinutes(date, tz));
+  }
+
+  function offsetLabel(mins) {
+    const sign = mins >= 0 ? "+" : "−";
+    const a = Math.abs(mins);
+    const h = Math.floor(a / 60);
+    const m = a % 60;
+    return "UTC " + sign + h + (m ? ":" + String(m).padStart(2, "0") : "");
+  }
+
+  // Difference (in minutes) of zone relative to IST at a given instant.
+  function diffFromIST(date, tz) {
+    return offsetMinutes(date, tz) - offsetMinutes(date, IST);
+  }
+
+  function humanizeDiff(mins) {
+    if (mins === 0) return { text: "Same as IST", cls: "same" };
+    const ahead = mins > 0;
+    const a = Math.abs(mins);
+    const h = Math.floor(a / 60);
+    const m = a % 60;
+    let parts = [];
+    if (h) parts.push(h + "h");
+    if (m) parts.push(m + "m");
+    return {
+      text: parts.join(" ") + (ahead ? " ahead" : " behind"),
+      cls: ahead ? "ahead" : "behind",
+    };
+  }
+
+  function dayDiffLabel(targetParts, istRefParts) {
+    const t = Date.UTC(targetParts.year, targetParts.month - 1, targetParts.day);
+    const r = Date.UTC(istRefParts.year, istRefParts.month - 1, istRefParts.day);
+    const diff = Math.round((t - r) / 86400000);
+    if (diff === 0) return "";
+    if (diff === 1) return "next day";
+    if (diff === -1) return "prev day";
+    return (diff > 0 ? "+" : "") + diff + " days";
+  }
+
+  // --- Build the card DOM once --------------------------------------------
+
+  const groupsEl = document.getElementById("groups");
+  const cardRefs = [];
+
+  for (const group of GROUPS) {
+    const gEl = document.createElement("div");
+    gEl.className = "group";
+    gEl.innerHTML =
+      '<div class="group-heading"><span>' + group.flag + "</span><span>" +
+      group.heading + "</span></div>";
+    const grid = document.createElement("div");
+    grid.className = "grid";
+
+    for (const z of group.zones) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML =
+        '<div class="card-top">' +
+          '<div class="card-city">' +
+            '<span class="card-flag">' + z.flag + "</span>" +
+            "<div><div class=\"card-name\">" + z.name + "</div>" +
+            '<div class="card-sub">' + z.sub + "</div>" +
+            '<div class="source-tag" data-tag style="display:none">↑ you entered this</div></div>' +
+          "</div>" +
+          '<span class="badge same" data-badge>—</span>' +
+        "</div>" +
+        '<div class="card-time" data-time></div>' +
+        '<div class="card-bottom">' +
+          '<span class="card-date" data-date></span>' +
+          '<span class="card-offset" data-offset></span>' +
+        "</div>";
+      grid.appendChild(card);
+      cardRefs.push({
+        tz: z.tz,
+        name: z.name,
+        el: card,
+        time: card.querySelector("[data-time]"),
+        date: card.querySelector("[data-date]"),
+        offset: card.querySelector("[data-offset]"),
+        badge: card.querySelector("[data-badge]"),
+        tag: card.querySelector("[data-tag]"),
+      });
+    }
+    gEl.appendChild(grid);
+    groupsEl.appendChild(gEl);
+  }
+
+  // --- Populate source-zone selector --------------------------------------
+
+  const srcZone = document.getElementById("srcZone");
+  // IST first (the home zone), then each city grouped under <optgroup>.
+  const istOpt = document.createElement("option");
+  istOpt.value = IST;
+  istOpt.textContent = "🇮🇳 India — IST (my time)";
+  srcZone.appendChild(istOpt);
+  for (const group of GROUPS) {
+    const og = document.createElement("optgroup");
+    og.label = group.heading;
+    for (const z of group.zones) {
+      const opt = document.createElement("option");
+      opt.value = z.tz;
+      opt.textContent = z.flag + " " + z.name + " — " + z.sub;
+      og.appendChild(opt);
+    }
+    srcZone.appendChild(og);
+  }
+  srcZone.value = IST;
+
+  // --- Live IST header clock ----------------------------------------------
+
+  const liveClock = document.getElementById("liveClock");
+  const liveDate = document.getElementById("liveDate");
+  const liveOffset = document.getElementById("liveOffset");
+
+  function tickLiveClock() {
+    const now = new Date();
+    const p = partsInZone(now, IST);
+    const t = formatTime12(p);
+    const ss = String(p.second).padStart(2, "0");
+    liveClock.innerHTML =
+      t.main + ':<span class="secs">' + ss + '</span>' +
+      '<span class="ampm">' + t.ampm + "</span>";
+    liveDate.textContent = new Date(
+      Date.UTC(p.year, p.month - 1, p.day)
+    ).toLocaleDateString("en-US", {
+      weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC",
+    });
+    liveOffset.textContent = offsetLabel(offsetMinutes(now, IST));
+  }
+
+  // --- Conversion render ---------------------------------------------------
+
+  const istInput = document.getElementById("istInput");
+  const istResult = document.getElementById("istResult");
+  const istResultContext = document.getElementById("istResultContext");
+  const istResultTime = document.getElementById("istResultTime");
+  const istResultDate = document.getElementById("istResultDate");
+
+  function render() {
+    const sourceTz = srcZone.value;
+    const [hh, mm] = istInput.value.split(":").map(Number);
+    if (Number.isNaN(hh) || Number.isNaN(mm)) return;
+
+    // Anchor the chosen H:M to TODAY's date in the SOURCE zone, then resolve
+    // that wall-clock to a real instant in time.
+    const nowSrcParts = partsInZone(new Date(), sourceTz);
+    const srcWall = {
+      year: nowSrcParts.year, month: nowSrcParts.month, day: nowSrcParts.day,
+      hour: hh, minute: mm, second: 0,
+    };
+    const instant = wallClockToInstant(srcWall, sourceTz);
+
+    // --- IST result panel (the home-zone answer) ---
+    const istParts = partsInZone(instant, IST);
+    const istT = formatTime12(istParts);
+    istResultTime.innerHTML =
+      istT.main + '<span class="ampm">' + istT.ampm + "</span>";
+    const istDd = dayDiffLabel(istParts, srcWall);
+    istResultDate.innerHTML = ordinalDateLabel(istParts) +
+      " · " + zoneAbbrev(instant, IST) +
+      (istDd ? ' <span class="daydiff">· ' + istDd + "</span>" : "");
+
+    const srcEcho = formatTime12(srcWall);
+    if (sourceTz === IST) {
+      istResultContext.textContent = "Your selected time";
+    } else {
+      const srcName = srcZone.options[srcZone.selectedIndex].textContent
+        .replace(/^[^A-Za-z]+/, "").split(" — ")[0];
+      istResultContext.textContent =
+        "When it's " + srcEcho.main + " " + srcEcho.ampm + " in " + srcName;
+    }
+
+    // --- City cards: same instant, day-diff measured from the source date ---
+    for (const c of cardRefs) {
+      const p = partsInZone(instant, c.tz);
+      const t = formatTime12(p);
+      c.time.innerHTML = t.main + '<span class="ampm">' + t.ampm + "</span>";
+
+      const dd = dayDiffLabel(p, srcWall);
+      c.date.innerHTML = ordinalDateLabel(p) +
+        (dd ? ' <span class="daydiff">· ' + dd + "</span>" : "");
+
+      c.offset.textContent = zoneAbbrev(instant, c.tz);
+
+      const diff = humanizeDiff(diffFromIST(instant, c.tz));
+      c.badge.textContent = diff.text;
+      c.badge.className = "badge " + diff.cls;
+
+      // Highlight the card the user is entering time for.
+      const isSource = c.tz === sourceTz;
+      c.el.classList.toggle("is-source", isSource);
+      c.tag.style.display = isSource ? "" : "none";
+    }
+  }
+
+  function setInputToNowInSource() {
+    const p = partsInZone(new Date(), srcZone.value);
+    istInput.value =
+      String(p.hour).padStart(2, "0") + ":" + String(p.minute).padStart(2, "0");
+  }
+
+  // --- Wire up -------------------------------------------------------------
+
+  document.getElementById("nowBtn").addEventListener("click", () => {
+    setInputToNowInSource();
+    render();
+  });
+  istInput.addEventListener("input", render);
+  srcZone.addEventListener("change", render);
+
+  setInputToNowInSource();
+  render();
+  tickLiveClock();
+  setInterval(tickLiveClock, 1000);
+</script>
+</body>
+</html>
