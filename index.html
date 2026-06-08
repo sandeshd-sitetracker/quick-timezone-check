@@ -91,18 +91,21 @@
     color: var(--muted);
     font-weight: 500;
   }
-  .control input[type="time"] {
+  .control input[type="time"],
+  .control input[type="date"] {
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 10px;
     color: var(--text);
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 600;
     padding: 10px 14px;
     font-variant-numeric: tabular-nums;
     color-scheme: dark;
   }
-  .control input[type="time"]:focus {
+  .control input[type="time"] { font-size: 22px; }
+  .control input[type="time"]:focus,
+  .control input[type="date"]:focus {
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(88,166,255,0.2);
@@ -275,8 +278,10 @@
   </header>
 
   <div class="control">
-    <label for="srcZone">When it's</label>
+    <label for="istInput">When it's</label>
     <input type="time" id="istInput" step="60" />
+    <label for="srcDate">on</label>
+    <input type="date" id="srcDate" />
     <label for="srcZone">in</label>
     <select id="srcZone"></select>
     <button id="nowBtn" type="button">Now</button>
@@ -383,6 +388,14 @@
     const d = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
     return d.toLocaleDateString("en-US", {
       weekday: "short", month: "short", day: "numeric", timeZone: "UTC",
+    });
+  }
+
+  function fullDateLabel(parts) {
+    // Long weekday + date, for the headline IST answer.
+    const d = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+    return d.toLocaleDateString("en-US", {
+      weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC",
     });
   }
 
@@ -538,6 +551,7 @@
   // --- Conversion render ---------------------------------------------------
 
   const istInput = document.getElementById("istInput");
+  const srcDate = document.getElementById("srcDate");
   const istResult = document.getElementById("istResult");
   const istResultContext = document.getElementById("istResultContext");
   const istResultTime = document.getElementById("istResultTime");
@@ -548,11 +562,18 @@
     const [hh, mm] = istInput.value.split(":").map(Number);
     if (Number.isNaN(hh) || Number.isNaN(mm)) return;
 
-    // Anchor the chosen H:M to TODAY's date in the SOURCE zone, then resolve
-    // that wall-clock to a real instant in time.
-    const nowSrcParts = partsInZone(new Date(), sourceTz);
+    // Anchor the chosen H:M to the chosen DATE in the SOURCE zone (falling back
+    // to today in that zone), then resolve that wall-clock to a real instant.
+    let baseY, baseMo, baseD;
+    const dp = (srcDate.value || "").split("-").map(Number);
+    if (dp.length === 3 && dp.every((n) => !Number.isNaN(n))) {
+      [baseY, baseMo, baseD] = dp;
+    } else {
+      const n = partsInZone(new Date(), sourceTz);
+      baseY = n.year; baseMo = n.month; baseD = n.day;
+    }
     const srcWall = {
-      year: nowSrcParts.year, month: nowSrcParts.month, day: nowSrcParts.day,
+      year: baseY, month: baseMo, day: baseD,
       hour: hh, minute: mm, second: 0,
     };
     const instant = wallClockToInstant(srcWall, sourceTz);
@@ -563,18 +584,19 @@
     istResultTime.innerHTML =
       istT.main + '<span class="ampm">' + istT.ampm + "</span>";
     const istDd = dayDiffLabel(istParts, srcWall);
-    istResultDate.innerHTML = ordinalDateLabel(istParts) +
+    istResultDate.innerHTML = fullDateLabel(istParts) +
       " · " + zoneAbbrev(instant, IST) +
       (istDd ? ' <span class="daydiff">· ' + istDd + "</span>" : "");
 
     const srcEcho = formatTime12(srcWall);
     if (sourceTz === IST) {
-      istResultContext.textContent = "Your selected time";
+      istResultContext.textContent = "Your selected time · " + fullDateLabel(srcWall);
     } else {
       const srcName = srcZone.options[srcZone.selectedIndex].textContent
         .replace(/^[^A-Za-z]+/, "").split(" — ")[0];
       istResultContext.textContent =
-        "When it's " + srcEcho.main + " " + srcEcho.ampm + " in " + srcName;
+        "When it's " + srcEcho.main + " " + srcEcho.ampm +
+        " on " + fullDateLabel(srcWall) + " in " + srcName;
     }
 
     // --- City cards: same instant, day-diff measured from the source date ---
@@ -604,6 +626,8 @@
     const p = partsInZone(new Date(), srcZone.value);
     istInput.value =
       String(p.hour).padStart(2, "0") + ":" + String(p.minute).padStart(2, "0");
+    srcDate.value =
+      p.year + "-" + String(p.month).padStart(2, "0") + "-" + String(p.day).padStart(2, "0");
   }
 
   // --- Wire up -------------------------------------------------------------
@@ -613,6 +637,7 @@
     render();
   });
   istInput.addEventListener("input", render);
+  srcDate.addEventListener("input", render);
   srcZone.addEventListener("change", render);
 
   setInputToNowInSource();
