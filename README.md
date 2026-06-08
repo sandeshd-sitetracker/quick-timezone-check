@@ -4,7 +4,7 @@ A single-page web app for converting times between India Standard Time (IST) and
 customers' time zones across the US, Europe, and Australia. Built for scheduling
 calls without doing timezone math in your head.
 
-🔗 **Live:** https://&lt;your-username&gt;.github.io/ist-converter/
+🔗 **Live:** https://sandeshd-sitetracker.github.io/quick-timezone-check/
 
 ## Features
 
