@@ -39,6 +39,7 @@
     --input-focus: rgba(76,195,138,0.22);
     --accent-soft: rgba(76,195,138,0.10);
     --accent-border: rgba(76,195,138,0.35);
+    --scheme: dark;
   }
 
   :root[data-theme="light"] {
@@ -62,6 +63,7 @@
     --input-focus: rgba(47,125,79,0.16);
     --accent-soft: rgba(47,125,79,0.07);
     --accent-border: rgba(47,125,79,0.28);
+    --scheme: light;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -148,7 +150,7 @@
     font-weight: 600;
     padding: 10px 14px;
     font-variant-numeric: tabular-nums;
-    color-scheme: dark;
+    color-scheme: var(--scheme);
   }
   .control input[type="time"] { font-size: 22px; }
   .control input[type="time"]:focus,
@@ -166,7 +168,7 @@
     font-weight: 600;
     padding: 11px 14px;
     cursor: pointer;
-    color-scheme: dark;
+    color-scheme: var(--scheme);
   }
   .control select:focus {
     outline: none;
