@@ -1,4 +1,4 @@
-# IST → World Time Converter
+# Time Converter
 
 A single-page web app for converting times between India Standard Time (IST) and
 customers' time zones across the US, Europe, and Australia. Built for scheduling
